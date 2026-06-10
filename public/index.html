@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mijn Persoonlijke Startpagina</title>
+  <!-- Prevent search engine indexing -->
+  <meta name="robots" content="noindex, nofollow">
+  <!-- Google Fonts: Outfit for headings, Inter for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons for modern UI icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- LOGIN CONTAINER -->
+  <div id="login-container" class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <i class="fa-solid fa-compass-drafting"></i>
+        </div>
+        <h1>Mijn Startpagina</h1>
+        <p>Voer je wachtwoord in om toegang te krijgen.</p>
+      </div>
+      <form id="login-form">
+        <div class="input-group">
+          <label for="password-input">Wachtwoord</label>
+          <div class="password-field">
+            <input type="password" id="password-input" placeholder="Wachtwoord" required autofocus autocomplete="current-password">
+            <button type="button" id="toggle-password" class="password-toggle-btn">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="fa-solid fa-unlock-keyhole"></i> Inloggen
+        </button>
+        <p id="login-error" class="error-msg"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD (HIDDEN UNTIL LOGGED IN) -->
+  <div id="dashboard-container" class="dashboard-wrapper" style="display: none;">
+    <!-- HEADER -->
+    <header class="main-header">
+      <div class="header-logo" id="header-logo" style="cursor: pointer;">
+        <i class="fa-solid fa-compass-drafting logo-icon"></i>
+        <div class="logo-text">
+          <h1>Startpagina</h1>
+          <span class="subtitle">Mijn Beheer</span>
+        </div>
+      </div>
+      
+      <!-- Search and Quick Actions -->
+      <div class="header-controls">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="search-input" placeholder="Zoek op titel of URL...">
+        </div>
+        <button id="add-category-btn" class="btn btn-gold">
+          <i class="fa-solid fa-folder-plus"></i> Categorie
+        </button>
+        <button id="logout-btn" class="btn btn-outline" title="Uitloggen">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <main class="dashboard-content">
+      <div id="categories-grid" class="categories-grid">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+      
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <i class="fa-solid fa-list-check empty-icon"></i>
+        <h2>Nog geen categorieën of links</h2>
+        <p>Voeg een categorie toe om te beginnen met het organiseren van je links.</p>
+        <button id="empty-add-category-btn" class="btn btn-gold">
+          <i class="fa-solid fa-folder-plus"></i> Categorie Toevoegen
+        </button>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="main-footer">
+      <p>&copy; 2026 Mijn Persoonlijke Startpagina. Beveiligd &amp; Privé.</p>
+    </footer>
+  </div>
+
+  <!-- MODAL: ADD / EDIT CATEGORY -->
+  <dialog id="category-dialog" class="custom-dialog">
+    <div class="dialog-header">
+      <h3 id="category-dialog-title">Categorie Toevoegen</h3>
+      <button class="dialog-close-btn" commandfor="category-dialog" command="close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form id="category-form">
+      <input type="hidden" id="category-id-input">
+      <div class="dialog-body">
+        <div class="form-group">
+          <label for="category-name-input">Categorienaam</label>
+          <input type="text" id="category-name-input" placeholder="Bijv. Social Media, Ontwikkeling" required autocomplete="off">
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-outline" commandfor="category-dialog" command="close">Annuleren</button>
+        <button type="submit" class="btn btn-primary">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: ADD / EDIT LINK -->
+  <dialog id="link-dialog" class="custom-dialog">
+    <div class="dialog-header">
+      <h3 id="link-dialog-title">Link Toevoegen</h3>
+      <button class="dialog-close-btn" commandfor="link-dialog" command="close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form id="link-form">
+      <input type="hidden" id="link-id-input">
+      <input type="hidden" id="link-category-id-input">
+      <div class="dialog-body">
+        <div class="form-group">
+          <label for="link-title-input">Titel / Naam</label>
+          <input type="text" id="link-title-input" placeholder="Bijv. Google, YouTube" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="link-url-input">URL (Website adres)</label>
+          <input type="url" id="link-url-input" placeholder="https://example.com" required autocomplete="off">
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-outline" commandfor="link-dialog" command="close">Annuleren</button>
+        <button type="submit" class="btn btn-primary">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Social Media"
+    },
+    {
+      "id": "cat-2",
+      "name": "Ontwikkeling"
+    },
+    {
+      "id": "cat-3",
+      "name": "Nieuws & Entertainment"
+    },
+    {
+      "id": "cat-1781094431188",
+      "name": "Jack Robberts"
+    },
+    {
+      "id": "cat-1781094504855",
+      "name": "Onderhoud websites"
+    }
+  ],
+  "links": [
+    {
+      "id": "link-1",
+      "categoryId": "cat-1",
+      "title": "YouTube",
+      "url": "https://www.youtube.com"
+    },
+    {
+      "id": "link-2",
+      "categoryId": "cat-1",
+      "title": "GitHub",
+      "url": "https://github.com"
+    },
+    {
+      "id": "link-3",
+      "categoryId": "cat-2",
+      "title": "Google Fonts",
+      "url": "https://fonts.google.com"
+    },
+    {
+      "id": "link-4",
+      "categoryId": "cat-2",
+      "title": "MDN Web Docs",
+      "url": "https://developer.mozilla.org"
+    },
+    {
+      "id": "link-5",
+      "categoryId": "cat-3",
+      "title": "NOS",
+      "url": "https://nos.nl"
+    },
+    {
+      "id": "link-6",
+      "categoryId": "cat-3",
+      "title": "Tweakers",
+      "url": "https://tweakers.net"
+    }
+  ]
+}
