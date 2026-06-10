@@ -607,12 +607,6 @@ function render() {
         state.categories = state.categories.filter(c => c.id !== category.id);
         state.links = state.links.filter(l => l.categoryId !== category.id);
 
-        if (!isServerMode) {
-          deletedItems.categories.push(category.id);
-          categoryLinks.forEach(l => deletedItems.links.push(l.id));
-          localStorage.setItem('startpagina_deleted', JSON.stringify(deletedItems));
-        }
-
         await saveData();
         render();
       }
@@ -699,11 +693,6 @@ function render() {
         e.stopPropagation();
         if (confirm(`Weet je zeker dat je de link "${link.title}" wilt verwijderen?`)) {
           state.links = state.links.filter(l => l.id !== link.id);
-
-          if (!isServerMode) {
-            deletedItems.links.push(link.id);
-            localStorage.setItem('startpagina_deleted', JSON.stringify(deletedItems));
-          }
 
           await saveData();
           render();
