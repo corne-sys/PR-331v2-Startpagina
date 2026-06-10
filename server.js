@@ -59,6 +59,7 @@ app.get('/api/data', authMiddleware, (req, res) => {
 // Save data endpoint
 app.post('/api/data', authMiddleware, (req, res) => {
   const data = req.body;
+  data.lastUpdated = Date.now();
   fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf8', (err) => {
     if (err) {
       return res.status(500).json({ error: 'Kan data niet opslaan' });

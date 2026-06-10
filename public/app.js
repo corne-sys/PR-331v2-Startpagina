@@ -283,33 +283,47 @@ async function fetchData() {
 }
 
 async function loadLocalData() {
-  // Try loading from localStorage first
+  let localDataObj = null;
   const localData = localStorage.getItem('startpagina_data');
   if (localData) {
     try {
-      const data = JSON.parse(localData);
-      state.categories = data.categories || [];
-      state.links = data.links || [];
-      render();
-      return;
+      localDataObj = JSON.parse(localData);
     } catch (e) {
       console.error('Error parsing localStorage data', e);
     }
   }
 
-  // Fallback: fetch static public/data.json (copied to public folder)
+  // Always fetch static public/data.json from server to see if a newer version was deployed to GitHub
   try {
     const res = await fetch('/data.json');
     if (res.ok) {
-      const data = await res.json();
-      state.categories = data.categories || [];
-      state.links = data.links || [];
-      // Save it to localStorage so subsequent edits persist
-      localStorage.setItem('startpagina_data', JSON.stringify(data));
+      const serverDataObj = await res.json();
+      
+      const serverTime = serverDataObj.lastUpdated || 0;
+      const localTime = (localDataObj && localDataObj.lastUpdated) || 0;
+      
+      // If deployed version is newer or equal (e.g. freshly pushed code to GitHub), use server version.
+      // Otherwise, use browser's localStorage.
+      if (serverTime >= localTime) {
+        state.categories = serverDataObj.categories || [];
+        state.links = serverDataObj.links || [];
+        localStorage.setItem('startpagina_data', JSON.stringify(serverDataObj));
+      } else if (localDataObj) {
+        state.categories = localDataObj.categories || [];
+        state.links = localDataObj.links || [];
+      }
+    } else if (localDataObj) {
+      state.categories = localDataObj.categories || [];
+      state.links = localDataObj.links || [];
+    }
+    render();
+  } catch (err) {
+    console.error('Fout bij laden van data:', err);
+    if (localDataObj) {
+      state.categories = localDataObj.categories || [];
+      state.links = localDataObj.links || [];
       render();
     }
-  } catch (err) {
-    console.error('Fout bij laden van statische data:', err);
   }
 }
 
@@ -349,7 +363,8 @@ async function saveData() {
 function saveLocalData() {
   const dataToSave = {
     categories: state.categories,
-    links: state.links
+    links: state.links,
+    lastUpdated: Date.now()
   };
   localStorage.setItem('startpagina_data', JSON.stringify(dataToSave));
 }
