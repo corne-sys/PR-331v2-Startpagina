@@ -226,7 +226,12 @@ function showDashboard() {
 }
 
 const APP_PASSWORD = 'PC6qZrtQC*C'; // Wijzig dit wachtwoord voor Vercel/client-side
-let isServerMode = true;
+
+const isLocal = window.location.hostname === 'localhost' || 
+                 window.location.hostname === '127.0.0.1' || 
+                 window.location.hostname === '[::1]';
+
+let isServerMode = isLocal;
 
 // API Interactions
 async function attemptLogin(password) {
