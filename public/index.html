@@ -145,29 +145,28 @@
     </form>
   </dialog>
 
-  <!-- MODAL: COPY LINK -->
-  <dialog id="copy-link-dialog" class="custom-dialog">
+  <!-- MODAL: MOVE LINK -->
+  <dialog id="move-link-dialog" class="custom-dialog">
     <div class="dialog-header">
-      <h3 id="copy-link-dialog-title">Link Kopiëren</h3>
-      <button class="dialog-close-btn" commandfor="copy-link-dialog" command="close">
+      <h3 id="move-link-dialog-title">Link Verplaatsen</h3>
+      <button class="dialog-close-btn" commandfor="move-link-dialog" command="close">
         <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
-    <form id="copy-link-form">
-      <input type="hidden" id="copy-link-title-input">
-      <input type="hidden" id="copy-link-url-input">
+    <form id="move-link-form">
+      <input type="hidden" id="move-link-id-input">
       <div class="dialog-body">
-        <p class="dialog-desc">Kopieer de geselecteerde link naar een andere categorie.</p>
+        <p class="dialog-desc">Verplaats de geselecteerde link naar een andere categorie.</p>
         <div class="form-group">
-          <label for="copy-link-category-select">Doelcategorie</label>
-          <select id="copy-link-category-select" required>
+          <label for="move-link-category-select">Doelcategorie</label>
+          <select id="move-link-category-select" required>
             <!-- Dynamically populated -->
           </select>
         </div>
       </div>
       <div class="dialog-footer">
-        <button type="button" class="btn btn-outline" commandfor="copy-link-dialog" command="close">Annuleren</button>
-        <button type="submit" class="btn btn-primary">Kopiëren</button>
+        <button type="button" class="btn btn-outline" commandfor="move-link-dialog" command="close">Annuleren</button>
+        <button type="submit" class="btn btn-primary">Verplaatsen</button>
       </div>
     </form>
   </dialog>

@@ -177,28 +177,23 @@ function setupEventListeners() {
     render();
   });
 
-  // Copy Link Form Submit
-  const copyLinkDialog = document.getElementById('copy-link-dialog');
-  const copyLinkForm = document.getElementById('copy-link-form');
-  const copyLinkTitleInput = document.getElementById('copy-link-title-input');
-  const copyLinkUrlInput = document.getElementById('copy-link-url-input');
-  const copyLinkCategorySelect = document.getElementById('copy-link-category-select');
+  // Move Link Form Submit
+  const moveLinkDialog = document.getElementById('move-link-dialog');
+  const moveLinkForm = document.getElementById('move-link-form');
+  const moveLinkIdInput = document.getElementById('move-link-id-input');
+  const moveLinkCategorySelect = document.getElementById('move-link-category-select');
 
-  copyLinkForm.addEventListener('submit', async (e) => {
+  moveLinkForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = copyLinkTitleInput.value;
-    const url = copyLinkUrlInput.value;
-    const categoryId = copyLinkCategorySelect.value;
+    const linkId = moveLinkIdInput.value;
+    const categoryId = moveLinkCategorySelect.value;
 
-    const newLink = {
-      id: 'link-' + Date.now(),
-      categoryId: categoryId,
-      title: title,
-      url: url
-    };
-    state.links.push(newLink);
+    const link = state.links.find(l => l.id === linkId);
+    if (link) {
+      link.categoryId = categoryId;
+    }
 
-    copyLinkDialog.close();
+    moveLinkDialog.close();
     await saveData();
     render();
   });
@@ -359,17 +354,15 @@ function saveLocalData() {
   localStorage.setItem('startpagina_data', JSON.stringify(dataToSave));
 }
 
-function openCopyLinkDialog(link) {
-  const copyLinkDialog = document.getElementById('copy-link-dialog');
-  const copyLinkTitleInput = document.getElementById('copy-link-title-input');
-  const copyLinkUrlInput = document.getElementById('copy-link-url-input');
-  const copyLinkCategorySelect = document.getElementById('copy-link-category-select');
+function openMoveLinkDialog(link) {
+  const moveLinkDialog = document.getElementById('move-link-dialog');
+  const moveLinkIdInput = document.getElementById('move-link-id-input');
+  const moveLinkCategorySelect = document.getElementById('move-link-category-select');
 
-  copyLinkTitleInput.value = link.title;
-  copyLinkUrlInput.value = link.url;
+  moveLinkIdInput.value = link.id;
 
   // Clear existing options
-  copyLinkCategorySelect.innerHTML = '';
+  moveLinkCategorySelect.innerHTML = '';
 
   // Populate categories select
   state.categories.forEach(cat => {
@@ -379,10 +372,10 @@ function openCopyLinkDialog(link) {
     if (cat.id === link.categoryId) {
       option.selected = true;
     }
-    copyLinkCategorySelect.appendChild(option);
+    moveLinkCategorySelect.appendChild(option);
   });
 
-  copyLinkDialog.showModal();
+  moveLinkDialog.showModal();
 }
 
 // Helper to get domain favicon
@@ -533,13 +526,13 @@ function render() {
         linkDialog.showModal();
       });
 
-      const linkCopy = document.createElement('button');
-      linkCopy.className = 'action-btn copy-btn';
-      linkCopy.title = 'Link kopiëren naar andere categorie';
-      linkCopy.innerHTML = '<i class="fa-solid fa-copy"></i>';
-      linkCopy.addEventListener('click', (e) => {
+      const linkMove = document.createElement('button');
+      linkMove.className = 'action-btn move-btn';
+      linkMove.title = 'Link verplaatsen naar andere categorie';
+      linkMove.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i>';
+      linkMove.addEventListener('click', (e) => {
         e.stopPropagation();
-        openCopyLinkDialog(link);
+        openMoveLinkDialog(link);
       });
 
       const linkDelete = document.createElement('button');
@@ -556,7 +549,7 @@ function render() {
       });
 
       linkControls.appendChild(linkEdit);
-      linkControls.appendChild(linkCopy);
+      linkControls.appendChild(linkMove);
       linkControls.appendChild(linkDelete);
       linkItem.appendChild(linkControls);
       linksList.appendChild(linkItem);

@@ -407,7 +407,7 @@ input:focus {
 }
 
 .action-btn.edit-btn:hover,
-.action-btn.copy-btn:hover {
+.action-btn.move-btn:hover {
   color: #c59b27; /* Gold */
 }
 
