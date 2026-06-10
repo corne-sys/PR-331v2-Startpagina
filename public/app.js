@@ -379,16 +379,23 @@ async function decryptData(base64Data, password) {
   }
 }
 
-const KV_URL = 'https://kvdb.io/spage_corne_f284b3d7/data';
+const KV_GET_URL = 'https://keyvalue.immanuel.co/api/KeyVal/GetValue/r01sbidl/data';
+const KV_UPDATE_URL = 'https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/r01sbidl/data';
 
 async function loadLocalData() {
   // Fetch from the public KV store first (shared database across all browsers)
   try {
-    const res = await fetch(KV_URL);
+    const res = await fetch(KV_GET_URL);
     if (res.ok) {
-      const encryptedData = await res.text();
-      if (encryptedData && encryptedData.trim() !== "") {
-        const decrypted = await decryptData(encryptedData, state.password);
+      const serverResponseVal = await res.json();
+      if (serverResponseVal && serverResponseVal.trim() !== "") {
+        // Convert URL-safe base64 back to normal base64
+        let base64 = serverResponseVal.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        
+        const decrypted = await decryptData(base64, state.password);
         if (decrypted) {
           const data = JSON.parse(decrypted);
           state.categories = data.categories || [];
@@ -461,10 +468,16 @@ async function saveLocalData() {
   const encrypted = await encryptData(jsonStr, state.password);
   
   if (encrypted) {
+    // Make base64 URL-safe to put in the request URL path
+    const urlSafeBase64 = encrypted
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
     try {
-      await fetch(KV_URL, {
-        method: 'PUT',
-        body: encrypted
+      await fetch(`${KV_UPDATE_URL}/${urlSafeBase64}`, {
+        method: 'POST',
+        body: ''
       });
     } catch (err) {
       console.error('Fout bij opslaan naar KV store:', err);
