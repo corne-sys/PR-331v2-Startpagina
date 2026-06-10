@@ -145,6 +145,33 @@
     </form>
   </dialog>
 
+  <!-- MODAL: COPY LINK -->
+  <dialog id="copy-link-dialog" class="custom-dialog">
+    <div class="dialog-header">
+      <h3 id="copy-link-dialog-title">Link Kopiëren</h3>
+      <button class="dialog-close-btn" commandfor="copy-link-dialog" command="close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form id="copy-link-form">
+      <input type="hidden" id="copy-link-title-input">
+      <input type="hidden" id="copy-link-url-input">
+      <div class="dialog-body">
+        <p class="dialog-desc">Kopieer de geselecteerde link naar een andere categorie.</p>
+        <div class="form-group">
+          <label for="copy-link-category-select">Doelcategorie</label>
+          <select id="copy-link-category-select" required>
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-outline" commandfor="copy-link-dialog" command="close">Annuleren</button>
+        <button type="submit" class="btn btn-primary">Kopiëren</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="app.js" type="module"></script>
 </body>
 </html>

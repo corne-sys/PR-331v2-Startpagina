@@ -150,7 +150,8 @@ a {
 
 input[type="text"],
 input[type="password"],
-input[type="url"] {
+input[type="url"],
+select {
   width: 100%;
   padding: 12px 16px;
   background-color: var(--bg-input-blue);
@@ -405,7 +406,8 @@ input:focus {
   color: #0f172a;
 }
 
-.action-btn.edit-btn:hover {
+.action-btn.edit-btn:hover,
+.action-btn.copy-btn:hover {
   color: #c59b27; /* Gold */
 }
 
@@ -614,14 +616,22 @@ input:focus {
   color: #475569;
 }
 
+.dialog-desc {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
 .custom-dialog input[type="text"],
-.custom-dialog input[type="url"] {
+.custom-dialog input[type="url"],
+.custom-dialog select {
   background-color: #f8fafc;
   border: 1px solid rgba(0, 0, 0, 0.12);
   color: #0f172a;
 }
 
-.custom-dialog input:focus {
+.custom-dialog input:focus,
+.custom-dialog select:focus {
   border-color: #d4af37;
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
 }

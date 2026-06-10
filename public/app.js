@@ -176,6 +176,32 @@ function setupEventListeners() {
     await saveData();
     render();
   });
+
+  // Copy Link Form Submit
+  const copyLinkDialog = document.getElementById('copy-link-dialog');
+  const copyLinkForm = document.getElementById('copy-link-form');
+  const copyLinkTitleInput = document.getElementById('copy-link-title-input');
+  const copyLinkUrlInput = document.getElementById('copy-link-url-input');
+  const copyLinkCategorySelect = document.getElementById('copy-link-category-select');
+
+  copyLinkForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = copyLinkTitleInput.value;
+    const url = copyLinkUrlInput.value;
+    const categoryId = copyLinkCategorySelect.value;
+
+    const newLink = {
+      id: 'link-' + Date.now(),
+      categoryId: categoryId,
+      title: title,
+      url: url
+    };
+    state.links.push(newLink);
+
+    copyLinkDialog.close();
+    await saveData();
+    render();
+  });
 }
 
 // Show / Hide Panels
@@ -192,18 +218,29 @@ function showDashboard() {
   dashboardContainer.style.display = 'flex';
 }
 
+let isServerMode = true;
+
 // API Interactions
 async function attemptLogin(password) {
+  if (!isServerMode) {
+    return password === 'startpagina123';
+  }
+
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
     });
+    if (res.status === 404) {
+      isServerMode = false;
+      return password === 'startpagina123';
+    }
     return res.ok;
   } catch (err) {
-    console.error('Inloggen mislukt:', err);
-    return false;
+    console.error('API call failed, switching to client-only mode:', err);
+    isServerMode = false;
+    return password === 'startpagina123';
   }
 }
 
@@ -220,10 +257,20 @@ async function verifyStoredPassword() {
 }
 
 async function fetchData() {
+  if (!isServerMode) {
+    loadLocalData();
+    return;
+  }
+
   try {
     const res = await fetch('/api/data', {
       headers: { 'X-Password': state.password }
     });
+    if (res.status === 404) {
+      isServerMode = false;
+      loadLocalData();
+      return;
+    }
     if (res.status === 401) {
       logoutBtn.click();
       return;
@@ -233,11 +280,49 @@ async function fetchData() {
     state.links = data.links || [];
     render();
   } catch (err) {
-    console.error('Fout bij ophalen van data:', err);
+    console.error('Fout bij ophalen van data, switching to client-only mode:', err);
+    isServerMode = false;
+    loadLocalData();
+  }
+}
+
+async function loadLocalData() {
+  // Try loading from localStorage first
+  const localData = localStorage.getItem('startpagina_data');
+  if (localData) {
+    try {
+      const data = JSON.parse(localData);
+      state.categories = data.categories || [];
+      state.links = data.links || [];
+      render();
+      return;
+    } catch (e) {
+      console.error('Error parsing localStorage data', e);
+    }
+  }
+
+  // Fallback: fetch static public/data.json (copied to public folder)
+  try {
+    const res = await fetch('/data.json');
+    if (res.ok) {
+      const data = await res.json();
+      state.categories = data.categories || [];
+      state.links = data.links || [];
+      // Save it to localStorage so subsequent edits persist
+      localStorage.setItem('startpagina_data', JSON.stringify(data));
+      render();
+    }
+  } catch (err) {
+    console.error('Fout bij laden van statische data:', err);
   }
 }
 
 async function saveData() {
+  if (!isServerMode) {
+    saveLocalData();
+    return;
+  }
+
   try {
     const res = await fetch('/api/data', {
       method: 'POST',
@@ -250,12 +335,53 @@ async function saveData() {
         links: state.links
       })
     });
+    if (res.status === 404) {
+      isServerMode = false;
+      saveLocalData();
+      return;
+    }
     if (res.status === 401) {
       logoutBtn.click();
     }
   } catch (err) {
-    console.error('Fout bij opslaan van data:', err);
+    console.error('Fout bij opslaan van data, switching to client-only mode:', err);
+    isServerMode = false;
+    saveLocalData();
   }
+}
+
+function saveLocalData() {
+  const dataToSave = {
+    categories: state.categories,
+    links: state.links
+  };
+  localStorage.setItem('startpagina_data', JSON.stringify(dataToSave));
+}
+
+function openCopyLinkDialog(link) {
+  const copyLinkDialog = document.getElementById('copy-link-dialog');
+  const copyLinkTitleInput = document.getElementById('copy-link-title-input');
+  const copyLinkUrlInput = document.getElementById('copy-link-url-input');
+  const copyLinkCategorySelect = document.getElementById('copy-link-category-select');
+
+  copyLinkTitleInput.value = link.title;
+  copyLinkUrlInput.value = link.url;
+
+  // Clear existing options
+  copyLinkCategorySelect.innerHTML = '';
+
+  // Populate categories select
+  state.categories.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat.id;
+    option.textContent = cat.name;
+    if (cat.id === link.categoryId) {
+      option.selected = true;
+    }
+    copyLinkCategorySelect.appendChild(option);
+  });
+
+  copyLinkDialog.showModal();
 }
 
 // Helper to get domain favicon
@@ -406,6 +532,15 @@ function render() {
         linkDialog.showModal();
       });
 
+      const linkCopy = document.createElement('button');
+      linkCopy.className = 'action-btn copy-btn';
+      linkCopy.title = 'Link kopiëren naar andere categorie';
+      linkCopy.innerHTML = '<i class="fa-solid fa-copy"></i>';
+      linkCopy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openCopyLinkDialog(link);
+      });
+
       const linkDelete = document.createElement('button');
       linkDelete.className = 'action-btn delete-btn';
       linkDelete.title = 'Link verwijderen';
@@ -420,6 +555,7 @@ function render() {
       });
 
       linkControls.appendChild(linkEdit);
+      linkControls.appendChild(linkCopy);
       linkControls.appendChild(linkDelete);
       linkItem.appendChild(linkControls);
       linksList.appendChild(linkItem);

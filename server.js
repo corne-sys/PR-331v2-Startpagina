@@ -4,7 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
+const DATA_FILE = path.join(__dirname, 'public', 'data.json');
 
 // Get password from environment variable or use the default
 const APP_PASSWORD = process.env.PASSWORD || 'startpagina123';
