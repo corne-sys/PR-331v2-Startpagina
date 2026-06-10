@@ -1,3 +1,12 @@
+// Supabase Configuration - Vul deze in om cross-browser opslag te activeren!
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+
+let supabase = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
 // Client-side Application State
 const state = {
   password: localStorage.getItem('startpagina_pwd') || '',
@@ -379,37 +388,42 @@ async function decryptData(base64Data, password) {
   }
 }
 
-const KV_GET_URL = 'https://keyvalue.immanuel.co/api/KeyVal/GetValue/r01sbidl/data';
-const KV_UPDATE_URL = 'https://keyvalue.immanuel.co/api/KeyVal/UpdateValue/r01sbidl/data';
-
 async function loadLocalData() {
-  // Fetch from the public KV store first (shared database across all browsers)
-  try {
-    const res = await fetch(KV_GET_URL);
-    if (res.ok) {
-      const serverResponseVal = await res.json();
-      if (serverResponseVal && serverResponseVal.trim() !== "") {
-        // Convert URL-safe base64 back to normal base64
-        let base64 = serverResponseVal.replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4) {
-          base64 += '=';
-        }
+  // Try loading from Supabase first if configured
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('dashboard')
+        .select('data')
+        .eq('id', 1)
+        .single();
         
-        const decrypted = await decryptData(base64, state.password);
-        if (decrypted) {
-          const data = JSON.parse(decrypted);
-          state.categories = data.categories || [];
-          state.links = data.links || [];
-          render();
-          return;
-        }
+      if (!error && data && data.data) {
+        state.categories = data.data.categories || [];
+        state.links = data.data.links || [];
+        render();
+        return;
+      }
+    } catch (err) {
+      console.error('Fout bij laden van Supabase:', err);
+    }
+  } else {
+    // Fallback: localStorage if Supabase is not set up
+    const localData = localStorage.getItem('startpagina_data');
+    if (localData) {
+      try {
+        const data = JSON.parse(localData);
+        state.categories = data.categories || [];
+        state.links = data.links || [];
+        render();
+        return;
+      } catch (e) {
+        console.error('Error parsing localStorage data', e);
       }
     }
-  } catch (err) {
-    console.error('Fout bij laden van KV data:', err);
   }
 
-  // Fallback: fetch static public/data.json (if KV is empty or fails)
+  // Fallback: fetch static public/data.json (if Supabase/localStorage is empty or fails)
   try {
     const res = await fetch('/data.json');
     if (res.ok) {
@@ -417,7 +431,7 @@ async function loadLocalData() {
       state.categories = data.categories || [];
       state.links = data.links || [];
       
-      // Save it to KV store so it's initialized
+      // Save it to Supabase/localStorage so it's initialized
       await saveLocalData();
     }
     render();
@@ -460,28 +474,31 @@ async function saveData() {
 }
 
 async function saveLocalData() {
-  const dataToSave = {
-    categories: state.categories,
-    links: state.links
-  };
-  const jsonStr = JSON.stringify(dataToSave);
-  const encrypted = await encryptData(jsonStr, state.password);
-  
-  if (encrypted) {
-    // Make base64 URL-safe to put in the request URL path
-    const urlSafeBase64 = encrypted
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-
+  if (supabase) {
     try {
-      await fetch(`${KV_UPDATE_URL}/${urlSafeBase64}`, {
-        method: 'POST',
-        body: ''
-      });
+      const { error } = await supabase
+        .from('dashboard')
+        .upsert({
+          id: 1,
+          data: {
+            categories: state.categories,
+            links: state.links
+          },
+          updated_at: new Date()
+        });
+      if (error) {
+        console.error('Fout bij opslaan naar Supabase:', error);
+      }
     } catch (err) {
-      console.error('Fout bij opslaan naar KV store:', err);
+      console.error('Fout bij opslaan naar Supabase:', err);
     }
+  } else {
+    // Save to localStorage if Supabase is not configured yet
+    const dataToSave = {
+      categories: state.categories,
+      links: state.links
+    };
+    localStorage.setItem('startpagina_data', JSON.stringify(dataToSave));
   }
 }
 
