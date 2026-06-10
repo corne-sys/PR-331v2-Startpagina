@@ -218,12 +218,13 @@ function showDashboard() {
   dashboardContainer.style.display = 'flex';
 }
 
+const APP_PASSWORD = 'startpagina123'; // Wijzig dit wachtwoord voor Vercel/client-side
 let isServerMode = true;
 
 // API Interactions
 async function attemptLogin(password) {
   if (!isServerMode) {
-    return password === 'startpagina123';
+    return password === APP_PASSWORD;
   }
 
   try {
@@ -234,13 +235,13 @@ async function attemptLogin(password) {
     });
     if (res.status === 404) {
       isServerMode = false;
-      return password === 'startpagina123';
+      return password === APP_PASSWORD;
     }
     return res.ok;
   } catch (err) {
     console.error('API call failed, switching to client-only mode:', err);
     isServerMode = false;
-    return password === 'startpagina123';
+    return password === APP_PASSWORD;
   }
 }
 
