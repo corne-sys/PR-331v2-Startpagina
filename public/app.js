@@ -1,6 +1,6 @@
 // Supabase Configuration - Vul deze in om cross-browser opslag te activeren!
-const SUPABASE_URL = '';
-const SUPABASE_ANON_KEY = '';
+const SUPABASE_URL = 'https://eeyykzmefqoyugkbsvud.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVleXlrem1lZnFveXVna2JzdnVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDAyMjEsImV4cCI6MjA5NjY3NjIyMX0.axEA-g0Rd6u2cy2i8zFy1gBqS8LTorwKfGoj9L4a8qI';
 
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
@@ -50,7 +50,7 @@ const linkDialogTitle = document.getElementById('link-dialog-title');
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
-  
+
   if (state.password) {
     verifyStoredPassword();
   } else {
@@ -72,7 +72,7 @@ function setupEventListeners() {
     e.preventDefault();
     const pwd = passwordInput.value.trim();
     if (!pwd) return;
-    
+
     const success = await attemptLogin(pwd);
     if (success) {
       state.password = pwd;
@@ -132,7 +132,7 @@ function setupEventListeners() {
     e.preventDefault();
     const id = categoryIdInput.value;
     const name = categoryNameInput.value.trim();
-    
+
     if (id) {
       // Edit
       const category = state.categories.find(c => c.id === id);
@@ -145,7 +145,7 @@ function setupEventListeners() {
       };
       state.categories.push(newCategory);
     }
-    
+
     categoryDialog.close();
     await saveData();
     render();
@@ -247,9 +247,9 @@ function showDashboard() {
 
 const APP_PASSWORD = 'PC6qZrtQC*C'; // Wijzig dit wachtwoord voor Vercel/client-side
 
-const isLocal = window.location.hostname === 'localhost' || 
-                 window.location.hostname === '127.0.0.1' || 
-                 window.location.hostname === '[::1]';
+const isLocal = window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === '[::1]';
 
 let isServerMode = isLocal;
 
@@ -397,7 +397,7 @@ async function loadLocalData() {
         .select('data')
         .eq('id', 1)
         .single();
-        
+
       if (!error && data && data.data) {
         state.categories = data.data.categories || [];
         state.links = data.data.links || [];
@@ -430,7 +430,7 @@ async function loadLocalData() {
       const data = await res.json();
       state.categories = data.categories || [];
       state.links = data.links || [];
-      
+
       // Save it to Supabase/localStorage so it's initialized
       await saveLocalData();
     }
@@ -539,13 +539,13 @@ function getFaviconUrl(url) {
 // Rendering Logic
 function render() {
   categoriesGrid.innerHTML = '';
-  
+
   if (state.categories.length === 0) {
     categoriesGrid.style.display = 'none';
     emptyState.style.display = 'block';
     return;
   }
-  
+
   categoriesGrid.style.display = 'grid';
   emptyState.style.display = 'none';
 
@@ -557,7 +557,7 @@ function render() {
     const filteredLinks = categoryLinks.filter(link => {
       if (!state.searchQuery) return true;
       return link.title.toLowerCase().includes(state.searchQuery) ||
-             link.url.toLowerCase().includes(state.searchQuery);
+        link.url.toLowerCase().includes(state.searchQuery);
     });
 
     // If searching, hide category if it has no matching links and the category name doesn't match
@@ -576,11 +576,11 @@ function render() {
     // Card Header
     const cardHeader = document.createElement('div');
     cardHeader.className = 'category-header';
-    
+
     const title = document.createElement('h2');
     title.className = 'category-title';
     title.textContent = category.name;
-    
+
     const actions = document.createElement('div');
     actions.className = 'category-actions';
 
