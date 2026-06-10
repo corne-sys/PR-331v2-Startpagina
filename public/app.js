@@ -6,11 +6,6 @@ const state = {
   searchQuery: ''
 };
 
-let deletedItems = {
-  categories: [],
-  links: []
-};
-
 // DOM Elements
 const loginContainer = document.getElementById('login-container');
 const dashboardContainer = document.getElementById('dashboard-container');
@@ -22,6 +17,7 @@ const loginError = document.getElementById('login-error');
 const searchInput = document.getElementById('search-input');
 const addCategoryBtn = document.getElementById('add-category-btn');
 const emptyAddCategoryBtn = document.getElementById('empty-add-category-btn');
+const restoreGithubBtn = document.getElementById('restore-github-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const categoriesGrid = document.getElementById('categories-grid');
 const emptyState = document.getElementById('empty-state');
@@ -44,13 +40,6 @@ const linkDialogTitle = document.getElementById('link-dialog-title');
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
-  const storedDeleted = localStorage.getItem('startpagina_deleted');
-  if (storedDeleted) {
-    try {
-      deletedItems = JSON.parse(storedDeleted);
-    } catch (e) {}
-  }
-
   setupEventListeners();
   
   if (state.password) {
@@ -209,6 +198,28 @@ function setupEventListeners() {
     await saveData();
     render();
   });
+
+  // Restore from GitHub
+  restoreGithubBtn.addEventListener('click', async () => {
+    if (confirm('Weet je zeker dat je alle links en categorieën wilt herstellen naar de standaardversie van GitHub? Dit overschrijft eventuele wijzigingen die je online hebt gemaakt.')) {
+      try {
+        const res = await fetch('/data.json');
+        if (res.ok) {
+          const data = await res.json();
+          state.categories = data.categories || [];
+          state.links = data.links || [];
+          await saveData();
+          render();
+          alert('Links zijn succesvol hersteld van GitHub!');
+        } else {
+          alert('Kon de gegevens niet ophalen van GitHub.');
+        }
+      } catch (err) {
+        console.error('Fout bij herstellen van GitHub:', err);
+        alert('Er is een fout opgetreden bij het herstellen.');
+      }
+    }
+  });
 }
 
 // Show / Hide Panels
@@ -299,59 +310,118 @@ async function fetchData() {
   }
 }
 
+// Simple encryption/decryption using Web Crypto API
+async function getKey(password) {
+  const enc = new TextEncoder();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+  return window.crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: enc.encode("startpagina_salt_123"),
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptData(text, password) {
+  try {
+    const key = await getKey(password);
+    const enc = new TextEncoder();
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: iv },
+      key,
+      enc.encode(text)
+    );
+    // Combine IV and encrypted data
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    // Convert to Base64
+    return btoa(String.fromCharCode.apply(null, combined));
+  } catch (e) {
+    console.error("Encryption failed", e);
+    return null;
+  }
+}
+
+async function decryptData(base64Data, password) {
+  try {
+    const key = await getKey(password);
+    const combined = new Uint8Array(
+      atob(base64Data)
+        .split("")
+        .map(c => c.charCodeAt(0))
+    );
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+    const decrypted = await window.crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      key,
+      encrypted
+    );
+    const dec = new TextDecoder();
+    return dec.decode(decrypted);
+  } catch (e) {
+    console.error("Decryption failed", e);
+    return null;
+  }
+}
+
+const KV_URL = 'https://kvdb.io/spage_corne_f284b3d7/data';
+
 async function loadLocalData() {
-  let localCategories = [];
-  let localLinks = [];
-  
-  const localData = localStorage.getItem('startpagina_data');
-  if (localData) {
-    try {
-      const parsed = JSON.parse(localData);
-      localCategories = parsed.categories || [];
-      localLinks = parsed.links || [];
-    } catch (e) {
-      console.error('Error parsing localStorage data', e);
+  // Fetch from the public KV store first (shared database across all browsers)
+  try {
+    const res = await fetch(KV_URL);
+    if (res.ok) {
+      const encryptedData = await res.text();
+      if (encryptedData && encryptedData.trim() !== "") {
+        const decrypted = await decryptData(encryptedData, state.password);
+        if (decrypted) {
+          const data = JSON.parse(decrypted);
+          state.categories = data.categories || [];
+          state.links = data.links || [];
+          render();
+          return;
+        }
+      }
     }
+  } catch (err) {
+    console.error('Fout bij laden van KV data:', err);
   }
 
-  // Fetch static public/data.json from server (GitHub / Vercel deployment)
+  // Fallback: fetch static public/data.json (if KV is empty or fails)
   try {
     const res = await fetch('/data.json');
     if (res.ok) {
-      const serverDataObj = await res.json();
-      const serverCategories = serverDataObj.categories || [];
-      const serverLinks = serverDataObj.links || [];
-
-      // Merge categories (server/GitHub takes precedence on key conflict)
-      const categoriesMap = new Map();
-      localCategories.forEach(cat => categoriesMap.set(cat.id, cat));
-      serverCategories.forEach(cat => categoriesMap.set(cat.id, cat));
-      state.categories = Array.from(categoriesMap.values()).filter(cat => !deletedItems.categories.includes(cat.id));
-
-      // Merge links (server/GitHub takes precedence on key conflict)
-      const linksMap = new Map();
-      localLinks.forEach(link => linksMap.set(link.id, link));
-      serverLinks.forEach(link => linksMap.set(link.id, link));
-      state.links = Array.from(linksMap.values()).filter(link => !deletedItems.links.includes(link.id));
-
-      // Sync the merged result back to localStorage
-      saveLocalData();
-    } else {
-      state.categories = localCategories.filter(cat => !deletedItems.categories.includes(cat.id));
-      state.links = localLinks.filter(link => !deletedItems.links.includes(link.id));
+      const data = await res.json();
+      state.categories = data.categories || [];
+      state.links = data.links || [];
+      
+      // Save it to KV store so it's initialized
+      await saveLocalData();
     }
     render();
   } catch (err) {
-    console.error('Fout bij laden van data:', err);
-    state.categories = localCategories.filter(cat => !deletedItems.categories.includes(cat.id));
-    state.links = localLinks.filter(link => !deletedItems.links.includes(link.id));
-    render();
+    console.error('Fout bij laden van statische data:', err);
   }
 }
 
 async function saveData() {
   if (!isServerMode) {
-    saveLocalData();
+    await saveLocalData();
     return;
   }
 
@@ -369,7 +439,7 @@ async function saveData() {
     });
     if (res.status === 404) {
       isServerMode = false;
-      saveLocalData();
+      await saveLocalData();
       return;
     }
     if (res.status === 401) {
@@ -378,17 +448,28 @@ async function saveData() {
   } catch (err) {
     console.error('Fout bij opslaan van data, switching to client-only mode:', err);
     isServerMode = false;
-    saveLocalData();
+    await saveLocalData();
   }
 }
 
-function saveLocalData() {
+async function saveLocalData() {
   const dataToSave = {
     categories: state.categories,
-    links: state.links,
-    lastUpdated: Date.now()
+    links: state.links
   };
-  localStorage.setItem('startpagina_data', JSON.stringify(dataToSave));
+  const jsonStr = JSON.stringify(dataToSave);
+  const encrypted = await encryptData(jsonStr, state.password);
+  
+  if (encrypted) {
+    try {
+      await fetch(KV_URL, {
+        method: 'PUT',
+        body: encrypted
+      });
+    } catch (err) {
+      console.error('Fout bij opslaan naar KV store:', err);
+    }
+  }
 }
 
 function openMoveLinkDialog(link) {
