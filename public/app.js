@@ -218,7 +218,7 @@ function showDashboard() {
   dashboardContainer.style.display = 'flex';
 }
 
-const APP_PASSWORD = 'startpagina123'; // Wijzig dit wachtwoord voor Vercel/client-side
+const APP_PASSWORD = 'PC6qZrtQC*C'; // Wijzig dit wachtwoord voor Vercel/client-side
 let isServerMode = true;
 
 // API Interactions
