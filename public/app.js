@@ -6,6 +6,11 @@ const state = {
   searchQuery: ''
 };
 
+let deletedItems = {
+  categories: [],
+  links: []
+};
+
 // DOM Elements
 const loginContainer = document.getElementById('login-container');
 const dashboardContainer = document.getElementById('dashboard-container');
@@ -39,6 +44,13 @@ const linkDialogTitle = document.getElementById('link-dialog-title');
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+  const storedDeleted = localStorage.getItem('startpagina_deleted');
+  if (storedDeleted) {
+    try {
+      deletedItems = JSON.parse(storedDeleted);
+    } catch (e) {}
+  }
+
   setupEventListeners();
   
   if (state.password) {
@@ -283,47 +295,52 @@ async function fetchData() {
 }
 
 async function loadLocalData() {
-  let localDataObj = null;
+  let localCategories = [];
+  let localLinks = [];
+  
   const localData = localStorage.getItem('startpagina_data');
   if (localData) {
     try {
-      localDataObj = JSON.parse(localData);
+      const parsed = JSON.parse(localData);
+      localCategories = parsed.categories || [];
+      localLinks = parsed.links || [];
     } catch (e) {
       console.error('Error parsing localStorage data', e);
     }
   }
 
-  // Always fetch static public/data.json from server to see if a newer version was deployed to GitHub
+  // Fetch static public/data.json from server (GitHub / Vercel deployment)
   try {
     const res = await fetch('/data.json');
     if (res.ok) {
       const serverDataObj = await res.json();
-      
-      const serverTime = serverDataObj.lastUpdated || 0;
-      const localTime = (localDataObj && localDataObj.lastUpdated) || 0;
-      
-      // If deployed version is newer or equal (e.g. freshly pushed code to GitHub), use server version.
-      // Otherwise, use browser's localStorage.
-      if (serverTime >= localTime) {
-        state.categories = serverDataObj.categories || [];
-        state.links = serverDataObj.links || [];
-        localStorage.setItem('startpagina_data', JSON.stringify(serverDataObj));
-      } else if (localDataObj) {
-        state.categories = localDataObj.categories || [];
-        state.links = localDataObj.links || [];
-      }
-    } else if (localDataObj) {
-      state.categories = localDataObj.categories || [];
-      state.links = localDataObj.links || [];
+      const serverCategories = serverDataObj.categories || [];
+      const serverLinks = serverDataObj.links || [];
+
+      // Merge categories (server/GitHub takes precedence on key conflict)
+      const categoriesMap = new Map();
+      localCategories.forEach(cat => categoriesMap.set(cat.id, cat));
+      serverCategories.forEach(cat => categoriesMap.set(cat.id, cat));
+      state.categories = Array.from(categoriesMap.values()).filter(cat => !deletedItems.categories.includes(cat.id));
+
+      // Merge links (server/GitHub takes precedence on key conflict)
+      const linksMap = new Map();
+      localLinks.forEach(link => linksMap.set(link.id, link));
+      serverLinks.forEach(link => linksMap.set(link.id, link));
+      state.links = Array.from(linksMap.values()).filter(link => !deletedItems.links.includes(link.id));
+
+      // Sync the merged result back to localStorage
+      saveLocalData();
+    } else {
+      state.categories = localCategories.filter(cat => !deletedItems.categories.includes(cat.id));
+      state.links = localLinks.filter(link => !deletedItems.links.includes(link.id));
     }
     render();
   } catch (err) {
     console.error('Fout bij laden van data:', err);
-    if (localDataObj) {
-      state.categories = localDataObj.categories || [];
-      state.links = localDataObj.links || [];
-      render();
-    }
+    state.categories = localCategories.filter(cat => !deletedItems.categories.includes(cat.id));
+    state.links = localLinks.filter(link => !deletedItems.links.includes(link.id));
+    render();
   }
 }
 
@@ -470,8 +487,16 @@ function render() {
     deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
     deleteBtn.addEventListener('click', async () => {
       if (confirm(`Weet je zeker dat je de categorie "${category.name}" en alle bijbehorende links wilt verwijderen?`)) {
+        const categoryLinks = state.links.filter(l => l.categoryId === category.id);
         state.categories = state.categories.filter(c => c.id !== category.id);
         state.links = state.links.filter(l => l.categoryId !== category.id);
+
+        if (!isServerMode) {
+          deletedItems.categories.push(category.id);
+          categoryLinks.forEach(l => deletedItems.links.push(l.id));
+          localStorage.setItem('startpagina_deleted', JSON.stringify(deletedItems));
+        }
+
         await saveData();
         render();
       }
@@ -558,6 +583,12 @@ function render() {
         e.stopPropagation();
         if (confirm(`Weet je zeker dat je de link "${link.title}" wilt verwijderen?`)) {
           state.links = state.links.filter(l => l.id !== link.id);
+
+          if (!isServerMode) {
+            deletedItems.links.push(link.id);
+            localStorage.setItem('startpagina_deleted', JSON.stringify(deletedItems));
+          }
+
           await saveData();
           render();
         }
