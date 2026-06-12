@@ -12,7 +12,8 @@ const state = {
   password: localStorage.getItem('startpagina_pwd') || '',
   categories: [],
   links: [],
-  searchQuery: ''
+  searchQuery: '',
+  isLocked: localStorage.getItem('startpagina_locked') === 'true'
 };
 
 // DOM Elements
@@ -27,6 +28,7 @@ const searchInput = document.getElementById('search-input');
 const addCategoryBtn = document.getElementById('add-category-btn');
 const emptyAddCategoryBtn = document.getElementById('empty-add-category-btn');
 const restoreGithubBtn = document.getElementById('restore-github-btn');
+const lockToggleBtn = document.getElementById('lock-toggle-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const categoriesGrid = document.getElementById('categories-grid');
 const emptyState = document.getElementById('empty-state');
@@ -229,6 +231,13 @@ function setupEventListeners() {
       }
     }
   });
+
+  // Lock / Unlock toggle
+  lockToggleBtn.addEventListener('click', () => {
+    state.isLocked = !state.isLocked;
+    localStorage.setItem('startpagina_locked', state.isLocked);
+    updateLockState();
+  });
 }
 
 // Show / Hide Panels
@@ -243,6 +252,21 @@ function showLogin() {
 function showDashboard() {
   loginContainer.style.display = 'none';
   dashboardContainer.style.display = 'flex';
+  updateLockState();
+}
+
+function updateLockState() {
+  if (state.isLocked) {
+    dashboardContainer.classList.add('is-locked');
+    lockToggleBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Unlock';
+    lockToggleBtn.classList.add('active');
+    lockToggleBtn.title = 'Bewerken ontgrendelen';
+  } else {
+    dashboardContainer.classList.remove('is-locked');
+    lockToggleBtn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Lock';
+    lockToggleBtn.classList.remove('active');
+    lockToggleBtn.title = 'Bewerken vergrendelen';
+  }
 }
 
 const APP_PASSWORD = 'PC6qZrtQC*C'; // Wijzig dit wachtwoord voor Vercel/client-side

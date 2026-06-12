@@ -678,6 +678,22 @@ input:focus {
   }
 }
 
+/* Lock mode hiding rules */
+.dashboard-wrapper.is-locked #add-category-btn,
+.dashboard-wrapper.is-locked #restore-github-btn,
+.dashboard-wrapper.is-locked .category-actions,
+.dashboard-wrapper.is-locked .link-controls,
+.dashboard-wrapper.is-locked .add-link-card-btn,
+.dashboard-wrapper.is-locked #empty-add-category-btn {
+  display: none !important;
+}
+
+#lock-toggle-btn.active {
+  background-color: rgba(212, 175, 55, 0.15);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .main-header {
